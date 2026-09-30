@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Suture Fusion &amp; Orbital Morphology in Crouzon Syndrome</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F7F5F0;
+    --panel:#FFFFFF;
+    --ink:#1E2421;
+    --ink-soft:#5B6560;
+    --line:#DDD8CC;
+    --crouzon:#375A7F;      /* diagnosis effect */
+    --crouzon-soft:#B7C5D3;
+    --suture:#A0522D;       /* fusion-severity effect */
+    --suture-soft:#DCC0AE;
+    --accent:#8C9A5B;       /* interaction highlight */
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;background:var(--paper);color:var(--ink);font-family:'Inter',system-ui,sans-serif;}
+  .wrap{max-width:1300px;margin:0 auto;padding:34px 28px 60px;}
+  h1{
+    font-family:'Source Serif 4',serif;
+    font-weight:600;
+    font-size:26px;
+    line-height:1.25;
+    margin:0 0 6px;
+    letter-spacing:-0.01em;
+  }
+  .sub{
+    font-size:14px;
+    color:var(--ink-soft);
+    max-width:1300px;
+    line-height:1.55;
+    margin-bottom:16px;
+  }
+  .tabs{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+    margin-bottom:16px;
+    border-bottom:1px solid var(--line);
+    padding-bottom:10px;
+  }
+  .tab{
+    font-family:'Source Serif 4',serif;
+    font-size:13.5px;
+    font-weight:500;
+    color:var(--ink-soft);
+    background:transparent;
+    border:1px solid var(--line);
+    border-radius:6px;
+    padding:4px 8px;
+    cursor:pointer;
+    transition:background .12s, color .12s, border-color .12s;
+  }
+  .tab:hover{border-color:var(--ink-soft);}
+  .tab.active{
+    background:var(--ink);
+    color:var(--paper);
+    border-color:var(--ink);
+  }
+  .panel{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:22px 24px 10px;
+  }
+  .panel-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    margin-bottom:20px;
+  }
+  .panel-title{
+    font-family:'Source Serif 4',serif;
+    font-size:20px;
+    font-weight:600;
+  }
+  .legend{
+    display:flex;
+    gap:18px;
+    font-size:14px;
+    color:var(--ink-soft);
+    margin:6px 0 6px;
+    flex-wrap:wrap;
+  }
+  .legend span{display:inline-flex;align-items:center;gap:6px;}
+  .legend-meta{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-end;
+  margin-top:-8px;
+  margin-bottom:18px;
+  }
+  .legend-sig{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+    color:var(--ink-soft);
+    margin-top:8px;
+    text-align:right;
+  }
+  .dot{width:10px;height:10px;border-radius:50%;display:inline-block;}
+  .smalldot{width:7px;height:7px;border-radius:50%;display:inline-block;}
+  .row-group{border-top:1px solid var(--line);padding:14px 0;}
+  .row-group:first-of-type{border-top:none;}
+  .suture-name{
+    font-family:'Source Serif 4',serif;
+    font-size:16px;
+    font-weight:600;
+    margin-bottom:8px;
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    gap:6px;
+  }
+  .r2-tag{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+    color:var(--ink-soft);
+    font-weight:400;
+  }
+  .plot-scroll{
+    overflow-x:auto;
+    overflow-y:hidden;
+    -webkit-overflow-scrolling:touch;
+    padding-bottom:10px; /* room for scroll bar*/
+    padding-right:5px;
+    padding-left:5px;
+  }
+  .plot-inner{
+    min-width:580px; /* 200 + 300(min plot) + 200 + 2*gap(10) - below this, plot scrolls */
+  }
+  .fp-row{
+    display:grid;
+    grid-template-columns:200px minmax(300px,1fr) 170px; /* forest plot area: label | plot | CI text fixed width across all rows */
+    gap:5px;
+    align-items:center;
+    height:22px; /* row height */
+    font-size:13px;
+  }
+  .fp-axis-row{
+    height:22px; /* extra room for HTML tick-label overlap below axis line */
+    margin-bottom:10px;
+  }
+  .fp-axis-row .fp-label{
+    font-size:22px;
+    color:var(--ink-soft);
+    text-transform:none;
+  }
+  .fp-axis-row .fp-num{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    color:var(--ink-soft);
+  }
+  .fp-label{color:var(--ink-soft);white-space:nowrap;}
+  .fp-track{display:flex;align-items:center;position:relative;}
+  /* RETURN HERE FOR TICK LABEL */
+  .tick-label{
+    position:absolute;
+    top:20px;
+    transform:translateX(-50%);
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10.5px; /* fixed size */
+    color:var(--ink-soft); 
+    white-space:nowrap;
+  }
+  .fp-num{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11.5px;
+    color:var(--ink);
+    text-align:right;
+    white-space:nowrap; /* CI doesn't wrap, scrolls */
+    min-width:0;
+  }
+  .fp-num.coef{white-space:nowrap;}
+  .fp-num .sig{color:var(--suture);font-weight:600;}
+  .fp-num.crouzon .sig{color:var(--crouzon);}
+  .fp-num.interaction .sig{color:var(--accent);}
+  .interaction-note{
+    margin-top:4px;
+    font-size:12px;
+    color:var(--accent);
+    font-family:'IBM Plex Mono',monospace;
+    white-space:nowrap;
+    overflow-x:auto;
+  }
+  svg text{font-family:'IBM Plex Mono',monospace;}
+  .footnote{
+    margin-top:22px;
+    margin-left:5px;
+    margin-right:5px;
+    font-size:12px;
+    color:var(--ink-soft);
+    line-height:1.6;
+    max-width:1fr;
+  }
+  .footnote code{
+    background:#EFEBE0;
+    padding: 12px 12px;
+    border-radius:5px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Effect of Suture Fusion Severity (Grade 1-5) vs. Crouzon Diagnosis on Orbital Morphology</h1>
+  <p class="sub">Each orbital measurement was modeled separately by suture using Crouzon diagnosis (binary), severity of suture fusion (graded 1-5) and their interaction. Points represent the linear regression coefficient (&beta;); bars show the 95% confidence interval (CI).</p>
+
+  <div class="tabs" id="tabs"></div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <div class="panel-title" id="panelTitle"></div>
+    </div>
+    <div class="legend">
+      <span><i class="dot" style="background:var(--crouzon)"></i>Crouzon Diagnosis (vs. controls)</span>
+      <span><i class="dot" style="background:var(--suture)"></i>Fusion Grade (per 1-unit increase)</span>
+      <span><i class="dot" style="background:var(--accent)"></i>Interaction, shown where significant</span>
+    </div>
+
+    <div class="legend-meta">
+      <div class="legend-sig">
+        <p> <span><i class="smalldot" style="background:var(--ink-soft)" ></i> filled = significant (&alpha; = 0.05),</span>
+          <span><i class="smalldot" style=" border:1px solid var(--ink-soft)" ></i> hollow = non-significant </span>
+        <br> *** = p &lt; 0.001, ** = p &lt; 0.01, * = p &lt; 0.05 </p>
+      </div>
+    </div>
+
+    <div class="plot-scroll">
+      <div class="plot-inner">
+        <div id="axis"></div>
+        <div id="rows"></div>
+      </div>
+    </div>
+  </div> 
+
+  <p class="footnote">
+    Interactive HTML table generated with assistance from Claude (Anthropic, Claude Opus 4.1), [Sept 2026]. Code reviewed, tested, and edited by the authors.
+  </p>
+</div>
+
+<script>
+const DATA = {"outcomes": ["Orbital Length", "Orbital Height", "Orbital Width", "Interpupillary Distance", "Upper Orbital Width", "Nasal Width", "Visual Axis Length", "Vertical Cone Angle", "Orbital Rim Angle"], "units": {"Orbital Length": "mm", "Orbital Height": "mm", "Orbital Width": "mm", "Interpupillary Distance": "mm", "Upper Orbital Width": "mm", "Nasal Width": "mm", "Visual Axis Length": "mm", "Vertical Cone Angle": "\u00b0", "Orbital Rim Angle": "\u00b0"}, "rows": [{"suture": "Frontosphenoidal", "term": "Suture", "outcomes": {"Orbital Length": {"beta": -0.32, "lo": -0.98, "hi": 0.34, "sig": "", "p": "0.341", "r2": 0.72}, "Orbital Height": {"beta": -0.53, "lo": -1.2, "hi": 0.14, "sig": "", "p": "0.119", "r2": 0.52}, "Orbital Width": {"beta": -1.28, "lo": -2.39, "hi": -0.16, "sig": "*", "p": "0.025", "r2": 0.65}, "Interpupillary Distance": {"beta": -1.81, "lo": -4.01, "hi": 0.4, "sig": "", "p": "0.106", "r2": 0.68}}}, {"suture": "Frontosphenoidal", "term": "Crouzon", "outcomes": {"Orbital Length": {"beta": -5.66, "lo": -7.59, "hi": -3.72, "sig": "***", "p": "0.000", "r2": null}, "Orbital Height": {"beta": 3.08, "lo": 1.13, "hi": 5.04, "sig": "*", "p": "0.002", "r2": null}, "Orbital Width": {"beta": -0.14, "lo": -2.43, "hi": 2.15, "sig": "", "p": "0.903", "r2": null}, "Interpupillary Distance": {"beta": 1.03, "lo": -3.5, "hi": 5.55, "sig": "", "p": "0.652", "r2": null}}}, {"suture": "Frontosphenoidal", "term": "Suture x Crouzon", "outcomes": {"Orbital Width": {"beta": 1.25, "lo": 0.12, "hi": 2.37, "sig": "*", "p": "0.030", "r2": null}, "Interpupillary Distance": {"beta": 2.55, "lo": 0.34, "hi": 4.77, "sig": "*", "p": "0.025", "r2": null}}}, {"suture": "Metopic", "term": "Suture", "outcomes": {"Orbital Length": {"beta": 0.35, "lo": -0.31, "hi": 1.0, "sig": "", "p": "0.294", "r2": 0.72}, "Orbital Height": {"beta": -0.5, "lo": -1.16, "hi": 0.17, "sig": "", "p": "0.139", "r2": 0.52}, "Orbital Width": {"beta": 0.27, "lo": -0.21, "hi": 0.75, "sig": "", "p": "0.260", "r2": 0.63}, "Interpupillary Distance": {"beta": -1.95, "lo": -3.27, "hi": -0.63, "sig": "*", "p": "0.005", "r2": 0.7}, "Upper Orbital Width": {"beta": -0.45, "lo": -2.39, "hi": 1.5, "sig": "", "p": "0.649", "r2": 0.28}, "Nasal Width": {"beta": 0.58, "lo": -0.19, "hi": 1.35, "sig": "***", "p": "0.000", "r2": 0.37}}}, {"suture": "Metopic", "term": "Crouzon", "outcomes": {"Orbital Length": {"beta": -6.52, "lo": -7.88, "hi": -5.16, "sig": "***", "p": "0.000", "r2": null}, "Orbital Height": {"beta": 2.22, "lo": 0.84, "hi": 3.59, "sig": "*", "p": "0.002", "r2": null}, "Orbital Width": {"beta": 1.4, "lo": 0.4, "hi": 2.4, "sig": "*", "p": "0.007", "r2": null}, "Interpupillary Distance": {"beta": 1.24, "lo": -2.49, "hi": 4.97, "sig": "", "p": "0.508", "r2": null}, "Upper Orbital Width": {"beta": 9.77, "lo": 4.27, "hi": 15.27, "sig": "*", "p": "0.001", "r2": null}, "Nasal Width": {"beta": -3.42, "lo": -5.03, "hi": -1.81, "sig": "***", "p": "0.000", "r2": null}}}, {"suture": "Metopic", "term": "Suture x Crouzon", "outcomes": {"Interpupillary Distance": {"beta": 1.99, "lo": 0.75, "hi": 3.23, "sig": "*", "p": "0.002", "r2": null}, "Upper Orbital Width": {"beta": -2.18, "lo": -4.01, "hi": -0.36, "sig": "*", "p": "0.020", "r2": null}}}, {"suture": "Frontoethmoidal", "term": "Suture", "outcomes": {"Orbital Length": {"beta": -0.13, "lo": -0.85, "hi": 0.59, "sig": "", "p": "0.717", "r2": 0.71}, "Orbital Height": {"beta": -0.19, "lo": -0.93, "hi": 0.54, "sig": "", "p": "0.600", "r2": 0.5}, "Orbital Width": {"beta": -0.51, "lo": -1.03, "hi": 0.0, "sig": "", "p": "0.051", "r2": 0.65}, "Interpupillary Distance": {"beta": -3.85, "lo": -6.85, "hi": -0.85, "sig": "*", "p": "0.013", "r2": 0.68}, "Vertical Cone Angle": {"beta": -0.77, "lo": -2.62, "hi": 1.08, "sig": "", "p": "0.408", "r2": 0.29}, "Orbital Rim Angle": {"beta": -0.12, "lo": -1.34, "hi": 1.09, "sig": "", "p": "0.837", "r2": 0.16}}}, {"suture": "Frontoethmoidal", "term": "Crouzon", "outcomes": {"Orbital Length": {"beta": -6.15, "lo": -7.82, "hi": -4.49, "sig": "***", "p": "0.000", "r2": null}, "Orbital Height": {"beta": 2.22, "lo": 0.53, "hi": 3.92, "sig": "*", "p": "0.011", "r2": null}, "Orbital Width": {"beta": 2.25, "lo": 1.07, "hi": 3.44, "sig": "***", "p": "0.000", "r2": null}, "Interpupillary Distance": {"beta": 2.91, "lo": -1.94, "hi": 7.77, "sig": "", "p": "0.234", "r2": null}, "Vertical Cone Angle": {"beta": 3.96, "lo": -0.28, "hi": 8.21, "sig": "", "p": "0.067", "r2": null}, "Orbital Rim Angle": {"beta": 0.5, "lo": -2.34, "hi": 3.34, "sig": "", "p": "0.725", "r2": null}}}, {"suture": "Frontoethmoidal", "term": "Suture x Crouzon", "outcomes": {"Interpupillary Distance": {"beta": 3.18, "lo": 0.17, "hi": 6.19, "sig": "*", "p": "0.039", "r2": null}}}, {"suture": "Zygomaticosphenoid", "term": "Suture", "outcomes": {"Orbital Length": {"beta": -0.42, "lo": -1.29, "hi": 0.46, "sig": "", "p": "0.342", "r2": 0.72}, "Orbital Height": {"beta": -0.65, "lo": -1.53, "hi": 0.24, "sig": "", "p": "0.149", "r2": 0.51}, "Orbital Width": {"beta": -0.48, "lo": -1.12, "hi": 0.15, "sig": "", "p": "0.135", "r2": 0.64}, "Interpupillary Distance": {"beta": -3.28, "lo": -6.8, "hi": 0.25, "sig": "", "p": "0.068", "r2": 0.67}, "Visual Axis Length": {"beta": -0.03, "lo": -0.91, "hi": 0.85, "sig": "", "p": "0.946", "r2": 0.54}, "Vertical Cone Angle": {"beta": 0.06, "lo": -2.19, "hi": 2.32, "sig": "", "p": "0.955", "r2": 0.28}}}, {"suture": "Zygomaticosphenoid", "term": "Crouzon", "outcomes": {"Orbital Length": {"beta": -5.39, "lo": -7.77, "hi": -3.0, "sig": "***", "p": "0.000", "r2": null}, "Orbital Height": {"beta": 3.43, "lo": 1.01, "hi": 5.84, "sig": "*", "p": "0.006", "r2": null}, "Orbital Width": {"beta": 2.64, "lo": 0.9, "hi": 4.38, "sig": "*", "p": "0.004", "r2": null}, "Interpupillary Distance": {"beta": 0.46, "lo": -5.65, "hi": 6.58, "sig": "", "p": "0.880", "r2": null}, "Visual Axis Length": {"beta": 0.89, "lo": 0.51, "hi": 0.9, "sig": "", "p": "0.466", "r2": null}, "Vertical Cone Angle": {"beta": 2.75, "lo": -3.42, "hi": 8.92, "sig": "", "p": "0.376", "r2": null}}}, {"suture": "Zygomaticosphenoid", "term": "Suture x Crouzon", "outcomes": {"Interpupillary Distance": {"beta": 3.75, "lo": 0.19, "hi": 7.3, "sig": "*", "p": "0.039", "r2": null}}}, {"suture": "Zygomaticofrontal", "term": "Suture", "outcomes": {"Orbital Length": {"beta": 0.19, "lo": -0.54, "hi": 0.93, "sig": "", "p": "0.600", "r2": 0.71}, "Orbital Height": {"beta": -0.71, "lo": -1.44, "hi": 0.02, "sig": "", "p": "0.057", "r2": 0.53}, "Orbital Width": {"beta": -1.48, "lo": -2.88, "hi": -0.08, "sig": "*", "p": "0.038", "r2": 0.65}, "Interpupillary Distance": {"beta": 0.56, "lo": -0.51, "hi": 1.63, "sig": "", "p": "0.298", "r2": 0.65}, "Visual Axis Length": {"beta": 0.31, "lo": -0.43, "hi": 1.04, "sig": "", "p": "0.407", "r2": 0.54}, "Vertical Cone Angle": {"beta": 1.11, "lo": -0.75, "hi": 2.98, "sig": "", "p": "0.236", "r2": 0.29}}}, {"suture": "Zygomaticofrontal", "term": "Crouzon", "outcomes": {"Orbital Length": {"beta": -6.7, "lo": -8.62, "hi": -4.78, "sig": "***", "p": "0.000", "r2": null}, "Orbital Height": {"beta": 3.3, "lo": 1.39, "hi": 5.21, "sig": "*", "p": "0.001", "r2": null}, "Orbital Width": {"beta": -0.33, "lo": -2.78, "hi": 2.13, "sig": "", "p": "0.796", "r2": null}, "Interpupillary Distance": {"beta": 5.15, "lo": 2.34, "hi": 7.95, "sig": "*", "p": "0.001", "r2": null}, "Visual Axis Length": {"beta": 0.24, "lo": -1.69, "hi": 2.16, "sig": "", "p": "0.807", "r2": null}, "Vertical Cone Angle": {"beta": 0.78, "lo": -4.1, "hi": 5.66, "sig": "", "p": "0.750", "r2": null}}}, {"suture": "Zygomaticofrontal", "term": "Suture x Crouzon", "outcomes": {"Orbital Width": {"beta": 1.45, "lo": 0.05, "hi": 2.85, "sig": "*", "p": "0.042", "r2": null}}}, {"suture": "Zygomaticomaxillary 1", "term": "Suture", "outcomes": {"Orbital Length": {"beta": -0.61, "lo": -1.48, "hi": 0.26, "sig": "", "p": "0.169", "r2": 0.72}, "Orbital Height": {"beta": 0.22, "lo": -0.68, "hi": 1.12, "sig": "", "p": "0.628", "r2": 0.5}, "Orbital Width": {"beta": -0.53, "lo": -1.17, "hi": 0.11, "sig": "", "p": "0.101", "r2": 0.64}, "Interpupillary Distance": {"beta": 0.34, "lo": -0.96, "hi": 1.64, "sig": "", "p": "0.601", "r2": 0.64}, "Visual Axis Length": {"beta": 0.22, "lo": -0.66, "hi": 1.11, "sig": "", "p": "0.614", "r2": 0.54}, "Vertical Cone Angle": {"beta": 0.91, "lo": -1.35, "hi": 3.18, "sig": "", "p": "0.422", "r2": 0.29}}}, {"suture": "Zygomaticomaxillary 1", "term": "Crouzon", "outcomes": {"Orbital Length": {"beta": -4.93, "lo": -7.33, "hi": -2.54, "sig": "***", "p": "0.000", "r2": null}, "Orbital Height": {"beta": 1.45, "lo": -1.04, "hi": 3.93, "sig": "", "p": "0.249", "r2": null}, "Orbital Width": {"beta": 2.77, "lo": 1.01, "hi": 4.53, "sig": "*", "p": "0.003", "r2": null}, "Interpupillary Distance": {"beta": 5.43, "lo": 1.85, "hi": 9.0, "sig": "*", "p": "0.004", "r2": null}, "Visual Axis Length": {"beta": 0.3, "lo": -2.15, "hi": 2.74, "sig": "", "p": "0.808", "r2": null}, "Vertical Cone Angle": {"beta": 0.79, "lo": -5.44, "hi": 7.01, "sig": "", "p": "0.801", "r2": null}}}, {"suture": "Zygomaticomaxillary 2", "term": "Suture", "outcomes": {"Orbital Length": {"beta": -0.09, "lo": -0.98, "hi": 0.79, "sig": "", "p": "0.831", "r2": 0.71}, "Orbital Height": {"beta": 0.08, "lo": -0.82, "hi": 0.99, "sig": "", "p": "0.852", "r2": 0.5}, "Orbital Width": {"beta": -0.32, "lo": -0.96, "hi": 0.33, "sig": "", "p": "0.331", "r2": 0.63}, "Interpupillary Distance": {"beta": 0.07, "lo": -1.22, "hi": 1.37, "sig": "", "p": "0.912", "r2": 0.64}, "Visual Axis Length": {"beta": 0.19, "lo": -0.69, "hi": 1.07, "sig": "", "p": "0.668", "r2": 0.54}, "Vertical Cone Angle": {"beta": 0.84, "lo": -1.41, "hi": 3.09, "sig": "", "p": "0.459", "r2": 0.28}}}, {"suture": "Zygomaticomaxillary 2", "term": "Crouzon", "outcomes": {"Orbital Length": {"beta": -6.12, "lo": -8.51, "hi": -3.74, "sig": "***", "p": "0.000", "r2": null}, "Orbital Height": {"beta": 1.76, "lo": -0.68, "hi": 4.21, "sig": "", "p": "0.153", "r2": null}, "Orbital Width": {"beta": 2.25, "lo": 0.51, "hi": 4.0, "sig": "*", "p": "0.012", "r2": null}, "Interpupillary Distance": {"beta": 6.05, "lo": 2.54, "hi": 9.56, "sig": "*", "p": "0.001", "r2": null}, "Visual Axis Length": {"beta": 0.39, "lo": -2.01, "hi": 2.78, "sig": "", "p": "0.747", "r2": null}, "Vertical Cone Angle": {"beta": 1.0, "lo": -5.1, "hi": 7.11, "sig": "", "p": "0.743", "r2": null}}}, {"suture": "Frontonasal", "term": "Suture", "outcomes": {"Orbital Length": {"beta": 0.38, "lo": -0.41, "hi": 1.17, "sig": "", "p": "0.337", "r2": 0.72}, "Orbital Height": {"beta": 0.37, "lo": -0.43, "hi": 1.18, "sig": "", "p": "0.356", "r2": 0.5}, "Orbital Width": {"beta": -1.21, "lo": -2.38, "hi": -0.03, "sig": "*", "p": "0.044", "r2": 0.66}, "Interpupillary Distance": {"beta": -0.22, "lo": -1.39, "hi": 0.95, "sig": "", "p": "0.709", "r2": 0.64}, "Visual Axis Length": {"beta": 0.16, "lo": -0.64, "hi": 0.96, "sig": "", "p": "0.691", "r2": 0.54}, "Vertical Cone Angle": {"beta": 0.13, "lo": -1.91, "hi": 2.17, "sig": "", "p": "0.900", "r2": 0.28}}}, {"suture": "Frontonasal", "term": "Crouzon", "outcomes": {"Orbital Length": {"beta": -7.07, "lo": -9.07, "hi": -5.07, "sig": "***", "p": "0.000", "r2": null}, "Orbital Height": {"beta": 1.24, "lo": -0.81, "hi": 3.28, "sig": "", "p": "0.230", "r2": null}, "Orbital Width": {"beta": -1.03, "lo": -3.53, "hi": 1.47, "sig": "", "p": "0.413", "r2": null}, "Interpupillary Distance": {"beta": 6.63, "lo": 3.67, "hi": 9.59, "sig": "***", "p": "0.000", "r2": null}, "Visual Axis Length": {"beta": 0.51, "lo": -1.51, "hi": 2.53, "sig": "", "p": "0.613", "r2": null}, "Vertical Cone Angle": {"beta": 2.65, "lo": -2.52, "hi": 7.82, "sig": "", "p": "0.310", "r2": null}}}, {"suture": "Frontonasal", "term": "Suture x Crouzon", "outcomes": {"Orbital Width": {"beta": 1.46, "lo": 0.26, "hi": 2.66, "sig": "*", "p": "0.018", "r2": null}}}, {"suture": "Frontomaxillary", "term": "Suture", "outcomes": {"Orbital Length": {"beta": 0.07, "lo": -0.88, "hi": 1.02, "sig": "", "p": "0.884", "r2": 0.71}, "Orbital Height": {"beta": -0.29, "lo": -1.26, "hi": 0.68, "sig": "", "p": "0.557", "r2": 0.5}, "Orbital Width": {"beta": -0.43, "lo": -1.12, "hi": 0.26, "sig": "", "p": "0.221", "r2": 0.63}, "Interpupillary Distance": {"beta": -0.81, "lo": -2.19, "hi": 0.58, "sig": "", "p": "0.248", "r2": 0.65}, "Visual Axis Length": {"beta": -0.48, "lo": -1.42, "hi": 0.47, "sig": "", "p": "0.317", "r2": 0.55}, "Vertical Cone Angle": {"beta": 1.67, "lo": -0.74, "hi": 4.07, "sig": "", "p": "0.171", "r2": 0.3}}}, {"suture": "Frontomaxillary", "term": "Crouzon", "outcomes": {"Orbital Length": {"beta": -6.48, "lo": -8.82, "hi": -4.14, "sig": "***", "p": "0.000", "r2": null}, "Orbital Height": {"beta": 2.54, "lo": 0.15, "hi": 4.92, "sig": "*", "p": "0.038", "r2": null}, "Orbital Width": {"beta": 2.41, "lo": 0.7, "hi": 4.12, "sig": "*", "p": "0.006", "r2": null}, "Interpupillary Distance": {"beta": 7.85, "lo": 4.44, "hi": 11.25, "sig": "***", "p": "0.000", "r2": null}, "Visual Axis Length": {"beta": 1.79, "lo": -0.55, "hi": 4.12, "sig": "", "p": "0.131", "r2": null}, "Vertical Cone Angle": {"beta": -0.48, "lo": -6.4, "hi": 5.43, "sig": "", "p": "0.870", "r2": null}}}, {"suture": "Nasomaxillary", "term": "Suture", "outcomes": {"Orbital Length": {"beta": -0.08, "lo": -0.94, "hi": 0.78, "sig": "", "p": "0.853", "r2": 0.71}, "Orbital Height": {"beta": -0.06, "lo": -0.93, "hi": 0.82, "sig": "", "p": "0.900", "r2": 0.5}, "Orbital Width": {"beta": -0.86, "lo": -1.45, "hi": -0.27, "sig": "*", "p": "0.005", "r2": 0.67}, "Interpupillary Distance": {"beta": -0.94, "lo": -2.17, "hi": 0.3, "sig": "", "p": "0.133", "r2": 0.66}, "Visual Axis Length": {"beta": -0.24, "lo": -1.1, "hi": 0.62, "sig": "", "p": "0.581", "r2": 0.54}, "Vertical Cone Angle": {"beta": -1.06, "lo": -3.24, "hi": 1.12, "sig": "", "p": "0.335", "r2": 0.29}}}, {"suture": "Nasomaxillary", "term": "Crouzon", "outcomes": {"Orbital Length": {"beta": -6.15, "lo": -8.53, "hi": -3.77, "sig": "***", "p": "0.000", "r2": null}, "Orbital Height": {"beta": 2.08, "lo": -0.35, "hi": 4.52, "sig": "", "p": "0.092", "r2": null}, "Orbital Width": {"beta": 3.54, "lo": 1.89, "hi": 5.18, "sig": "***", "p": "0.000", "r2": null}, "Interpupillary Distance": {"beta": 8.38, "lo": 4.95, "hi": 11.82, "sig": "***", "p": "0.000", "r2": null}, "Visual Axis Length": {"beta": 1.37, "lo": -1.02, "hi": 3.75, "sig": "", "p": "0.257", "r2": null}, "Vertical Cone Angle": {"beta": 5.34, "lo": -0.72, "hi": 11.41, "sig": "", "p": "0.083", "r2": null}}}]};
+
+const SUTURE_ORDER = ["Frontosphenoidal","Metopic","Frontoethmoidal","Zygomaticosphenoid","Zygomaticofrontal",
+  "Zygomaticomaxillary 1","Zygomaticomaxillary 2","Frontonasal","Frontomaxillary","Nasomaxillary"];
+
+function getModel(suture, outcome){
+  const terms = {};
+  DATA.rows.filter(r=>r.suture===suture).forEach(r=>{
+    if(r.outcomes[outcome]) terms[r.term] = r.outcomes[outcome];
+  });
+  return terms;
+}
+
+function buildTabs(){
+  const tabDiv = document.getElementById('tabs');
+  DATA.outcomes.forEach(oc=>{
+    const has = DATA.rows.some(r=>r.outcomes[oc]);
+    if(!has) return;
+    const b = document.createElement('button');
+    b.className='tab';
+    b.textContent=oc;
+    b.onclick=()=>render(oc);
+    b.dataset.outcome=oc;
+    tabDiv.appendChild(b);
+  });
+}
+
+function computUnitDomains(){
+  const byUnit = {};
+  DATA.outcomes.forEach(oc=>{
+    const unit = DATA.units[oc];
+    if(!byUnit[unit]) byUnit[unit] = [];
+    DATA.rows.forEach(r=>{
+      const t = r.outcomes[oc];
+      if(t) { byUnit[unit].push(t.lo); byUnit[unit].push(t.hi); }
+    })
+  });
+  const result = {};
+  Object.keys(byUnit).forEach(unit=>{
+    const vals = byUnit[unit];
+    const maxAbs = Math.max(Math.abs(Math.min(...vals)), Math.abs(Math.max(...vals))) * 1.14;
+    const domain = [-maxAbs, maxAbs];
+    result[unit] = { domain, ticks: niceTicks(domain) };
+  });
+  return result;
+}
+
+function fmt(v){ return (v>0?'+':'') + v.toFixed(2); }
+
+function render(outcome){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.outcome===outcome));
+  document.getElementById('panelTitle').textContent = outcome;
+
+  // does this outcome have any data at all?
+  let hasData = DATA.rows.some(r=>r.outcomes[outcome]);
+  const axisDiv = document.getElementById('axis');
+  const rowsDiv = document.getElementById('rows');
+  if(!hasData){ axisDiv.innerHTML=''; rowsDiv.innerHTML='<p style="color:var(--ink-soft);font-size:13px;">No data for this measurement.</p>'; return; }
+
+  // share axis per unit type; mm outcomes one scale, • outcomes another scale
+  const unit = DATA.units[outcome];
+  const { domain, ticks } = UNIT_DOMAINS[unit];
+
+  axisDiv.innerHTML = '';
+  const axisRow = document.createElement('div');
+  axisRow.className = 'fp-row fp-axis-row';
+  const axisLabel = document.createElement('div');
+  axisLabel.className = 'fp-label';
+  axisLabel.textContent = '';
+  axisRow.appendChild(axisLabel);
+  const axisTrack = document.createElement('div');
+  axisTrack.className = 'fp-track';
+  axisTrack.appendChild(makeAxisSVG(domain, ticks));
+  axisTrack.appendChild(makeTickLabels(domain, ticks, unit));
+  axisRow.appendChild(axisTrack);
+  const axisNum = document.createElement('div');
+  axisNum.className = 'fp-num';
+  axisNum.textContent = '\u03b2 (' + DATA.units[outcome] + ') [95% CI]';
+  axisRow.appendChild(axisNum);
+  axisDiv.appendChild(axisRow);
+
+  rowsDiv.innerHTML = '';
+
+  SUTURE_ORDER.forEach(s=>{
+    const m = getModel(s, outcome);
+    if(Object.keys(m).length===0) return;
+    const group = document.createElement('div');
+    group.className='row-group';
+
+    const r2 = m['Suture'] ? m['Suture'].r2 : null;
+    const nameDiv = document.createElement('div');
+    nameDiv.className='suture-name';
+    nameDiv.innerHTML = s + (r2!==null ? '<span class="r2-tag"> R\u00b2 = '+r2.toFixed(2)+'</span>' : '');
+    group.appendChild(nameDiv);
+
+    ['Crouzon','Suture'].forEach(termKey=>{
+      const t = m[termKey];
+      if(!t) return;
+      const row = document.createElement('div');
+      row.className='fp-row';
+
+      const label = document.createElement('div');
+      label.className='fp-label';
+      label.textContent = termKey==='Crouzon' ? 'Crouzon Diagnosis' : 'Suture Fusion Grade';
+      row.appendChild(label);
+
+      const track = document.createElement('div');
+      track.className='fp-track';
+      track.appendChild(makeSVG(t, domain, termKey==='Crouzon' ? 'var(--crouzon)' : 'var(--suture)'));
+      row.appendChild(track);
+
+      const num = document.createElement('div');
+      num.className = 'fp-num' + (termKey==='Crouzon' ? ' crouzon':'');
+      num.innerHTML =
+        '<span class="coef">' +
+        fmt(t.beta) +
+        ' [' + t.lo.toFixed(2) + ', ' + t.hi.toFixed(2) + ']' +
+        (t.sig ? ' <span class="sig">' + t.sig + '</span>' : '') +
+        '</span>';
+      row.appendChild(num);
+
+      group.appendChild(row);
+    });
+
+    if(m['Suture x Crouzon']){
+      const t = m['Suture x Crouzon'];
+
+      const row = document.createElement('div');
+      row.className = 'fp-row';
+
+      const label = document.createElement('div');
+      label.className = 'fp-label';
+      label.textContent = 'Interaction';
+      row.appendChild(label);
+
+      const track = document.createElement('div');
+      track.className = 'fp-track';
+      track.appendChild(makeSVG(t, domain, 'var(--accent)'));
+      row.appendChild(track);
+
+      const num = document.createElement('div');
+      num.className = 'fp-num interaction';
+
+      num.innerHTML =
+        fmt(t.beta) +
+        ' [' + t.lo.toFixed(2) + ', ' + t.hi.toFixed(2) + ']' +
+        (t.sig ? ' <span class="sig">' + t.sig + '</span>' : '');
+
+      row.appendChild(num);
+
+      group.appendChild(row);
+    }
+
+    rowsDiv.appendChild(group);
+  });
+}
+
+const FP_W = 650, FP_PAD = 3; // share geometry, align row trakcs and axis ines
+
+function niceTicks(domain, targetCount){
+  targetCount = targetCount || 4;
+  const maxAbs = domain[1];
+  const rawStep = maxAbs / targetCount;
+  const mag = Math.pow(10, Math.floor(Math.log10(rawStep)));
+  const norm = rawStep / mag;
+  let niceNorm;
+  if(norm < 1.5) niceNorm = 1;
+  else if(norm < 3.5) niceNorm = 4;
+  else if(norm < 7.5) niceNorm = 5;
+  else niceNorm = 10;
+  const step = niceNorm * mag;
+  const ticks = [0];
+  for(let v = step; v <= maxAbs + step*0.4; v += step){
+    ticks.push(v);
+    ticks.push(-v);
+  }
+  return ticks.sort((a,b)=>a-b);
+}
+
+function makeSVG(t, domain, color){
+  const W = FP_W, H = 32, PAD = FP_PAD;
+  const x = v => PAD + (v - domain[0]) / (domain[1]-domain[0]) * (W - 2*PAD);
+  const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
+  svg.setAttribute('viewBox', '0 0 '+W+' '+H);
+  svg.style.width='100%'; svg.style.height='32px'; svg.style.display='block';
+
+  // zero line (centered)
+  const zero = document.createElementNS(svg.namespaceURI,'line');
+  const zx = x(0);
+  zero.setAttribute('x1',zx); zero.setAttribute('x2',zx);
+  zero.setAttribute('y1',2); zero.setAttribute('y2',H-2);
+  zero.setAttribute('stroke','#C9C3B4'); zero.setAttribute('stroke-width','2');
+  zero.setAttribute('stroke-dasharray','2,2');
+  zero.setAttribute('vector-effect','non-scaling-stroke'); /* - non-scaling constant 2px */
+  svg.appendChild(zero);
+
+  // CI bar
+  const bar = document.createElementNS(svg.namespaceURI,'line');
+  bar.setAttribute('x1', x(t.lo)); bar.setAttribute('x2', x(t.hi));
+  bar.setAttribute('y1', H/2); bar.setAttribute('y2', H/2);
+  bar.setAttribute('stroke', color); bar.setAttribute('stroke-width','5');
+  bar.setAttribute('vector-effect','auto'); /* - non-scaling constant 5px */  
+  svg.appendChild(bar);
+
+  // point
+  const sig = !!t.sig;
+  const pt = document.createElementNS(svg.namespaceURI,'circle');
+  pt.setAttribute('cx', x(t.beta)); pt.setAttribute('cy', H/2); pt.setAttribute('r', 6); /* circle size */
+  pt.setAttribute('fill', sig ? color : 'white');
+  pt.setAttribute('stroke', color); pt.setAttribute('stroke-width','3'); /* stroke width */
+  pt.setAttribute('vector-effect', 'auto');
+  svg.appendChild(pt);
+
+  return svg;
+}
+
+function pctX(v, domain){
+  const padPct = FP_PAD / FP_W * 100;
+  return padPct + (v - domain[0]) / (domain[1]-domain[0]) * (100 - 2*padPct);
+}
+
+function makeAxisSVG(domain, ticks){
+  const W = FP_W, H = 20, PAD = FP_PAD;
+  const x = v => PAD + (v - domain[0]) / (domain[1]-domain[0]) * (W - 2*PAD);
+  const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
+  svg.setAttribute('viewBox', '0 0 '+W+' '+H);
+  svg.setAttribute('preserveAspectRatio', 'none');
+  svg.style.width='100%'; svg.style.height=H+'px'; svg.style.display='block';
+
+  const lineY = 8;
+
+  // baseline
+  const base = document.createElementNS(svg.namespaceURI,'line');
+  base.setAttribute('x1', PAD); base.setAttribute('x2', W-PAD);
+  base.setAttribute('y1', lineY); base.setAttribute('y2', lineY);
+  base.setAttribute('stroke','#B9B3A2'); base.setAttribute('stroke-width','1');
+  base.setAttribute('vector-effect','non-scaling-stroke'); /* - non-scaling constant 1px */
+  svg.appendChild(base);
+
+  ticks.forEach(tick=>{
+    const tx = x(tick);
+    const tickLine = document.createElementNS(svg.namespaceURI,'line');
+    tickLine.setAttribute('x1', tx); tickLine.setAttribute('x2', tx);
+    tickLine.setAttribute('y1', tick===0 ? lineY-5 : lineY-3);
+    tickLine.setAttribute('y2', lineY+3);
+    tickLine.setAttribute('stroke', tick===0 ? '#8A8373' : '#B9B3A2');
+    tickLine.setAttribute('stroke-width', tick ===0 ? '1.5' : '1');
+    tickLine.setAttribute('vector-effect','non-scaling-stroke'); /* - non-scaling constant 1px */
+    svg.appendChild(tickLine);
+
+/*    const label = document.createElementNS(svg.namespaceURI,'text');
+    label.setAttribute('x', tx);
+    label.setAttribute('y', lineY+25);
+    label.setAttribute('text-anchor', 'middle');
+    label.setAttribute('fill', '#5B6560');
+    label.setAttribute('font-size', '14');
+    label.textContent = (tick>0?'+':'') + tick + (unit==='\u00b0' ? '\u00b0' : '');
+    svg.appendChild(label);  */ /* remove constant labels */
+  });
+
+  return svg;
+}
+
+function makeTickLabels(domain, ticks, unit){
+  const frag = document.createDocumentFragment();
+  ticks.forEach(tick=>{
+    const el = document.createElement('span');
+    el.className ='tick-label';
+    el.style.left = pctX(tick, domain) + '%';
+    el.textContent = (tick>0?'+':'') + tick + (unit==='\u00b0' ? '\u00b0' : '');
+    frag.appendChild(el);
+  });
+  return frag;
+
+  /* replaced tick labels ---> 
+
+  div.className='fp-tick-labels';
+  ticks.forEach(tick=>{
+    const lbl = document.createElement('div');
+    lbl.className='fp-tick-label';
+    lbl.style.left = pctX(tick, domain) + '%';
+    lbl.textContent = (tick>0?'+':'') + tick + (unit==='\u00b0' ? '\u00b0' : '');
+    div.appendChild(lbl);
+  });
+  return lbl;
+
+  */
+}
+
+const UNIT_DOMAINS = computUnitDomains();
+
+buildTabs();
+render('Orbital Length');
+</script>
+</body>
+</html>
