@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Suture Fusion &amp; Orbital Morphology in Crouzon Syndrome</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F7F5F0;
+    --panel:#FFFFFF;
+    --ink:#1E2421;
+    --ink-soft:#5B6560;
+    --line:#DDD8CC;
+    --crouzon:#375A7F;      /* diagnosis effect */
+    --crouzon-soft:#B7C5D3;
+    --suture:#A0522D;       /* fusion-severity effect */
+    --suture-soft:#DCC0AE;
+    --accent:#8C9A5B;       /* interaction highlight */
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;background:var(--paper);color:var(--ink);font-family:'Inter',system-ui,sans-serif;}
+  .wrap{max-width:1300px;margin:0 auto;padding:34px 28px 60px;}
+  h1{
+    font-family:'Source Serif 4',serif;
+    font-weight:600;
+    font-size:26px;
+    line-height:1.25;
+    margin:0 0 6px;
+    letter-spacing:-0.01em;
+  }
+  .sub{
+    font-size:14px;
+    color:var(--ink-soft);
+    max-width:1300px;
+    line-height:1.55;
+    margin-bottom:16px;
+  }
+  .tabs{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+    margin-bottom:16px;
+    border-bottom:1px solid var(--line);
+    padding-bottom:10px;
+  }
+  .tab{
+    font-family:'Source Serif 4',serif;
+    font-size:13.5px;
+    font-weight:500;
+    color:var(--ink-soft);
+    background:transparent;
+    border:1px solid var(--line);
+    border-radius:6px;
+    padding:4px 8px;
+    cursor:pointer;
+    transition:background .12s, color .12s, border-color .12s;
+  }
+  .tab:hover{border-color:var(--ink-soft);}
+  .tab.active{
+    background:var(--ink);
+    color:var(--paper);
+    border-color:var(--ink);
+  }
+  .panel{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:22px 24px 10px;
+  }
+  .panel-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    margin-bottom:20px;
+  }
+  .panel-title{
+    font-family:'Source Serif 4',serif;
+    font-size:20px;
+    font-weight:600;
+  }
+  .legend{
+    display:flex;
+    gap:18px;
+    font-size:14px;
+    color:var(--ink-soft);
+    margin:6px 0 6px;
+    flex-wrap:wrap;
+  }
+  .legend span{display:inline-flex;align-items:center;gap:6px;}
+  .legend-meta{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-end;
+  margin-top:-8px;
+  margin-bottom:18px;
+  }
+  .legend-sig{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+    color:var(--ink-soft);
+    margin-top:8px;
+    text-align:right;
+  }
+  .dot{width:10px;height:10px;border-radius:50%;display:inline-block;}
+  .smalldot{width:7px;height:7px;border-radius:50%;display:inline-block;}
+  .row-group{border-top:1px solid var(--line);padding:14px 0;}
+  .row-group:first-of-type{border-top:none;}
+  .suture-name{
+    font-family:'Source Serif 4',serif;
+    font-size:16px;
+    font-weight:600;
+    margin-bottom:8px;
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    gap:6px;
+  }
+  .r2-tag{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+    color:var(--ink-soft);
+    font-weight:400;
+  }
+  .plot-scroll{
+    overflow-x:auto;
+    overflow-y:hidden;
+    -webkit-overflow-scrolling:touch;
+    padding-bottom:10px; /* room for scroll bar*/
+    padding-right:5px;
+    padding-left:5px;
+  }
+  .plot-inner{
+    min-width:580px; /* 200 + 300(min plot) + 200 + 2*gap(10) - below this, plot scrolls */
+  }
+  .fp-row{
+    display:grid;
+    grid-template-columns:200px minmax(300px,1fr) 170px; /* forest plot area: label | plot | CI text fixed width across all rows */
+    gap:5px;
+    align-items:center;
+    height:22px; /* row height */
+    font-size:13px;
+  }
+  .fp-axis-row{
+    height:22px; /* extra room for HTML tick-label overlap below axis line */
+    margin-bottom:10px;
+  }
+  .fp-axis-row .fp-label{
+    font-size:22px;
+    color:var(--ink-soft);
+    text-transform:none;
+  }
+  .fp-axis-row .fp-num{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    color:var(--ink-soft);
+  }
+  .fp-label{color:var(--ink-soft);white-space:nowrap;}
+  .fp-track{display:flex;align-items:center;position:relative;}
+  /* RETURN HERE FOR TICK LABEL */
+  .tick-label{
+    position:absolute;
+    top:20px;
+    transform:translateX(-50%);
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10.5px; /* fixed size */
+    color:var(--ink-soft); 
+    white-space:nowrap;
+  }
+  .fp-num{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11.5px;
+    color:var(--ink);
+    text-align:right;
+    white-space:nowrap; /* CI doesn't wrap, scrolls */
+    min-width:0;
+  }
+  .fp-num.coef{white-space:nowrap;}
+  .fp-num .sig{color:var(--suture);font-weight:600;}
+  .fp-num.crouzon .sig{color:var(--crouzon);}
+  .fp-num.interaction .sig{color:var(--accent);}
+  .interaction-note{
+    margin-top:4px;
+    font-size:12px;
+    color:var(--accent);
+    font-family:'IBM Plex Mono',monospace;
+    white-space:nowrap;
+    overflow-x:auto;
+  }
+  svg text{font-family:'IBM Plex Mono',monospace;}
+  .footnote{
+    margin-top:22px;
+    margin-left:5px;
+    margin-right:5px;
+    font-size:12px;
+    color:var(--ink-soft);
+    line-height:1.6;
+    max-width:1fr;
+  }
+  .footnote code{
+    background:#EFEBE0;
+    padding: 12px 12px;
+    border-radius:5px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Effect of Suture Fusion Severity (Grade 1-5) vs. Crouzon Diagnosis on Orbital Morphology</h1>
+  <p class="sub">Each orbital measurement was modeled separately by suture using Crouzon diagnosis (binary), severity of suture fusion (graded 1-5) and their interaction. Points represent the linear regression coefficient (β) for each term; CI bars show 95% confidence intervals. Significant terms are highlighted.</p>
+
+  <div class="tabs" id="tabs"></div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <div class="panel-title" id="panelTitle"></div>
+    </div>
+    <div class="legend">
+      <span><i class="dot" style="background:var(--crouzon)"></i>Crouzon Diagnosis (vs. controls)</span>
+      <span><i class="dot" style="background:var(--suture)"></i>Fusion Grade (per 1-unit increase)</span>
+      <span><i class="dot" style="background:var(--accent)"></i>Interaction, shown where significant</span>
+    </div>
+
+    <div class="legend-meta">
+      <div class="legend-sig">
+        <p> <span><i class="smalldot" style="background:var(--ink-soft)" ></i> filled = significant (&alpha; = 0.05),</span>
+          <span><i class="smalldot" style=" border:1px solid var(--ink-soft)" ></i> hollow = non-significant </span>
+        <br> *** = p &lt; 0.001, ** = p &lt; 0.01, * = p &lt; 0.05 </p>
+      </div>
+    </div>
+
+    <div class="plot-scroll">
+      <div class="plot-inner">
+        <div id="axis"></div>
+        <div id="rows"></div>
+      </div>
+    </div>
+  </div> 
+
+  <p class="footnote">
+    Interactive HTML table generated with assistance from Claude (Anthropic, Claude Opus 4.1), [Sept 2026]. Code reviewed, tested, and edited by the authors.
+  </p>
+</div>
+
+<script>
+const DATA = {"outcomes": ["Orbital Length", "Orbital Height", "Orbital Width", "Interpupillary Distance", "Upper Orbital Width", "Nasal Width", "Visual Axis Length", "Vertical Cone Angle", "Orbital Ratio"], "units": {"Orbital Length": "mm", "Orbital Height": "mm", "Orbital Width": "mm", "Interpupillary Distance": "mm", "Upper Orbital Width": "mm", "Nasal Width": "mm", "Visual Axis Length": "mm", "Vertical Cone Angle": "°", "Orbital Ratio": "ratio"}, "rows": [{"suture":"Frontosphenoidal","term":"Crouzon","outcomes":{"Orbital Length":{"beta":2.11,"lo":0.89,"hi":3.33,"sig":"*"},"Orbital Height":{"beta":-1.12,"lo":-2.28,"hi":0.04,"sig":null},"Orbital Width":{"beta":1.36,"lo":0.22,"hi":2.51,"sig":"*"},"Interpupillary Distance":{"beta":2.09,"lo":0.48,"hi":3.70,"sig":"*"},"Upper Orbital Width":{"beta":1.44,"lo":-0.83,"hi":3.71,"sig":null},"Nasal Width":{"beta":1.37,"lo":0.34,"hi":2.40,"sig":"*"},"Visual Axis Length":{"beta":1.87,"lo":0.12,"hi":3.62,"sig":"*"},"Vertical Cone Angle":{"beta":-1.85,"lo":-4.13,"hi":0.43,"sig":null},"Orbital Ratio":{"beta":0.03,"lo":-0.02,"hi":0.08,"sig":null}},"outcomes": {"Orbital Length": {"beta": 2.11, "lo": 0.89, "hi": 3.33, "sig": "*"}, "Orbital Height": {"beta": -1.12, "lo": -2.28, "hi": 0.04, "sig": null}, "Orbital Width": {"beta": 1.36, "lo": 0.22, "hi": 2.51, "sig": "*"}, "Interpupillary Distance": {"beta": 2.09, "lo": 0.48, "hi": 3.70, "sig": "*"}, "Upper Orbital Width": {"beta": 1.44, "lo": -0.83, "hi": 3.71, "sig": null}, "Nasal Width": {"beta": 1.37, "lo": 0.34, "hi": 2.40, "sig": "*"}, "Visual Axis Length": {"beta": 1.87, "lo": 0.12, "hi": 3.62, "sig": "*"}, "Vertical Cone Angle": {"beta": -1.85, "lo": -4.13, "hi": 0.43, "sig": null}, "Orbital Ratio": {"beta": 0.03, "lo": -0.02, "hi": 0.08, "sig": null}},
+"outcomes": {"Orbital Length": {"beta": 2.11, "lo": 0.89, "hi": 3.33, "sig": "*"}, "Orbital Height": {"beta": -1.12, "lo": -2.28, "hi": 0.04, "sig": null}, "Orbital Width": {"beta": 1.36, "lo": 0.22, "hi": 2.51, "sig": "*"}, "Interpupillary Distance": {"beta": 2.09, "lo": 0.48, "hi": 3.70, "sig": "*"}, "Upper Orbital Width": {"beta": 1.44, "lo": -0.83, "hi": 3.71, "sig": null}, "Nasal Width": {"beta": 1.37, "lo": 0.34, "hi": 2.40, "sig": "*"}, "Visual Axis Length": {"beta": 1.87, "lo": 0.12, "hi": 3.62, "sig": "*"}, "Vertical Cone Angle": {"beta": -1.85, "lo": -4.13, "hi": 0.43, "sig": null}, "Orbital Ratio": {"beta": 0.03, "lo": -0.02, "hi": 0.08, "sig": null}}}];
+
+const SUTURE_ORDER = ["Frontosphenoidal","Metopic","Frontoethmoidal","Zygomaticosphenoid","Zygomaticofrontal",
+  "Zygomaticomaxillary 1","Zygomaticomaxillary 2","Frontonasal","Frontomaxillary","Nasomaxillary"];
+
+function getModel(suture, outcome){
+  const terms = {};
+  DATA.rows.filter(r=>r.suture===suture).forEach(r=>{
+    if(r.outcomes[outcome]) terms[r.term] = r.outcomes[outcome];
+  });
+  return terms;
+}
+
+function buildTabs(){
+  const tabDiv = document.getElementById('tabs');
+  DATA.outcomes.forEach(oc=>{
+    const has = DATA.rows.some(r=>r.outcomes[oc]);
+    if(!has) return;
+    const b = document.createElement('button');
+    b.className='tab';
+    b.textContent=oc;
+    b.onclick=()=>render(oc);
+    b.dataset.outcome=oc;
+    tabDiv.appendChild(b);
+  });
+}
+
+function computUnitDomains(){
+  const byUnit = {};
+  DATA.outcomes.forEach(oc=>{
+    const unit = DATA.units[oc];
+    if(!byUnit[unit]) byUnit[unit] = [];
+    DATA.rows.forEach(r=>{
+      const t = r.outcomes[oc];
+      if(t) { byUnit[unit].push(t.lo); byUnit[unit].push(t.hi); }
+    })
+  });
+  const result = {};
+  Object.keys(byUnit).forEach(unit=>{
+    const vals = byUnit[unit];
+    const maxAbs = Math.max(Math.abs(Math.min(...vals)), Math.abs(Math.max(...vals))) * 1.14;
+    const domain = [-maxAbs, maxAbs];
+    result[unit] = { domain, ticks: niceTicks(domain) };
+  });
+  return result;
+}
+
+function fmt(v){ return (v>0?'+':'') + v.toFixed(2); }
+
+function render(outcome){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.outcome===outcome));
+  document.getElementById('panelTitle').textContent = outcome;
+
+  let hasData = DATA.rows.some(r=>r.outcomes[outcome]);
+  const axisDiv = document.getElementById('axis');
+  const rowsDiv = document.getElementById('rows');
+  if(!hasData){ axisDiv.innerHTML=''; rowsDiv.innerHTML='<p style="color:var(--ink-soft);font-size:13px;">No data for this measurement.</p>'; return; }
+
+  const unit = DATA.units[outcome];
+  const { domain, ticks } = UNIT_DOMAINS[unit];
+
+  axisDiv.innerHTML = '';
+  const axisRow = document.createElement('div');
+  axisRow.className = 'fp-row fp-axis-row';
+  const axisLabel = document.createElement('div');
+  axisLabel.className = 'fp-label';
+  axisLabel.textContent = '';
+  axisRow.appendChild(axisLabel);
+  const axisTrack = document.createElement('div');
+  axisTrack.className = 'fp-track';
+  axisTrack.appendChild(makeAxisSVG(domain, ticks));
+  axisTrack.appendChild(makeTickLabels(domain, ticks, unit));
+  axisRow.appendChild(axisTrack);
+  const axisNum = document.createElement('div');
+  axisNum.className = 'fp-num';
+  axisNum.textContent = '\u03b2 (' + DATA.units[outcome] + ') [95% CI]';
+  axisRow.appendChild(axisNum);
+  axisDiv.appendChild(axisRow);
+
+  rowsDiv.innerHTML = '';
+
+  SUTURE_ORDER.forEach(s=>{
+    const m = getModel(s, outcome);
+    if(Object.keys(m).length===0) return;
+    const group = document.createElement('div');
+    group.className='row-group';
+
+    const r2 = m['Suture'] ? m['Suture'].r2 : null;
+    const nameDiv = document.createElement('div');
+    nameDiv.className='suture-name';
+    nameDiv.innerHTML = s + (r2!==null ? '<span class="r2-tag"> R\u00b2 = '+r2.toFixed(2)+'</span>' : '');
+    group.appendChild(nameDiv);
+
+    ['Crouzon','Suture'].forEach(termKey=>{
+      const t = m[termKey];
+      if(!t) return;
+      const row = document.createElement('div');
+      row.className='fp-row';
+
+      const label = document.createElement('div');
+      label.className='fp-label';
+      label.textContent = termKey==='Crouzon' ? 'Crouzon Diagnosis' : 'Suture Fusion Grade';
+      row.appendChild(label);
+
+      const track = document.createElement('div');
+      track.className='fp-track';
+      track.appendChild(makeSVG(t, domain, termKey==='Crouzon' ? 'var(--crouzon)' : 'var(--suture)'));
+      row.appendChild(track);
+
+      const num = document.createElement('div');
+      num.className = 'fp-num' + (termKey==='Crouzon' ? ' crouzon':'');
+      num.innerHTML =
+        '<span class="coef">' +
+        fmt(t.beta) +
+        ' [' + t.lo.toFixed(2) + ', ' + t.hi.toFixed(2) + ']' +
+        (t.sig ? ' <span class="sig">' + t.sig + '</span>' : '') +
+        '</span>';
+      row.appendChild(num);
+
+      group.appendChild(row);
+    });
+
+    if(m['Suture x Crouzon']){
+      const t = m['Suture x Crouzon'];
+
+      const row = document.createElement('div');
+      row.className = 'fp-row';
+
+      const label = document.createElement('div');
+      label.className = 'fp-label';
+      label.textContent = 'Interaction';
+      row.appendChild(label);
+
+      const track = document.createElement('div');
+      track.className='fp-track';
+      track.appendChild(makeSVG(t, domain, 'var(--accent)'));
+      row.appendChild(track);
+
+      const num = document.createElement('div');
+      num.className = 'fp-num interaction';
+
+      num.innerHTML =
+        fmt(t.beta) +
+        ' [' + t.lo.toFixed(2) + ', ' + t.hi.toFixed(2) + ']' +
+        (t.sig ? ' <span class="sig">' + t.sig + '</span>' : '');
+
+      row.appendChild(num);
+
+      group.appendChild(row);
+    }
+
+    rowsDiv.appendChild(group);
+  });
+}
+
+const FP_W = 650, FP_PAD = 3;
+
+function niceTicks(domain, targetCount){
+  targetCount = targetCount || 4;
+  const maxAbs = domain[1];
+  const rawStep = maxAbs / targetCount;
+  const mag = Math.pow(10, Math.floor(Math.log10(rawStep)));
+  const norm = rawStep / mag;
+  let niceNorm;
+  if(norm < 1.5) niceNorm = 1;
+  else if(norm < 3.5) niceNorm = 4;
+  else if(norm < 7.5) niceNorm = 5;
+  else niceNorm = 10;
+  const step = niceNorm * mag;
+  const ticks = [0];
+  for(let v = step; v <= maxAbs + step*0.4; v += step){
+    ticks.push(v);
+    ticks.push(-v);
+  }
+  return ticks.sort((a,b)=>a-b);
+}
+
+function makeSVG(t, domain, color){
+  const W = FP_W, H = 32, PAD = FP_PAD;
+  const x = v => PAD + (v - domain[0]) / (domain[1]-domain[0]) * (W - 2*PAD);
+  const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
+  svg.setAttribute('viewBox', '0 0 '+W+' '+H);
+  svg.style.width='100%'; svg.style.height='32px'; svg.style.display='block';
+
+  const zero = document.createElementNS(svg.namespaceURI,'line');
+  const zx = x(0);
+  zero.setAttribute('x1',zx); zero.setAttribute('x2',zx);
+  zero.setAttribute('y1',2); zero.setAttribute('y2',H-2);
+  zero.setAttribute('stroke','#C9C3B4'); zero.setAttribute('stroke-width','2');
+  zero.setAttribute('stroke-dasharray','2,2');
+  zero.setAttribute('vector-effect','non-scaling-stroke');
+  svg.appendChild(zero);
+
+  const bar = document.createElementNS(svg.namespaceURI,'line');
+  bar.setAttribute('x1', x(t.lo)); bar.setAttribute('x2', x(t.hi));
+  bar.setAttribute('y1', H/2); bar.setAttribute('y2', H/2);
+  bar.setAttribute('stroke', color); bar.setAttribute('stroke-width','5');
+  bar.setAttribute('vector-effect','auto');
+  svg.appendChild(bar);
+
+  const sig = !!t.sig;
+  const pt = document.createElementNS(svg.namespaceURI,'circle');
+  pt.setAttribute('cx', x(t.beta)); pt.setAttribute('cy', H/2); pt.setAttribute('r', 6);
+  pt.setAttribute('fill', sig ? color : 'white');
+  pt.setAttribute('stroke', color); pt.setAttribute('stroke-width','3');
+  pt.setAttribute('vector-effect', 'auto');
+  svg.appendChild(pt);
+
+  return svg;
+}
+
+function pctX(v, domain){
+  const padPct = FP_PAD / FP_W * 100;
+  return padPct + (v - domain[0]) / (domain[1]-domain[0]) * (100 - 2*padPct);
+}
+
+function makeAxisSVG(domain, ticks){
+  const W = FP_W, H = 20, PAD = FP_PAD;
+  const x = v => PAD + (v - domain[0]) / (domain[1]-domain[0]) * (W - 2*PAD);
+  const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
+  svg.setAttribute('viewBox', '0 0 '+W+' '+H);
+  svg.setAttribute('preserveAspectRatio', 'none');
+  svg.style.width='100%'; svg.style.height=H+'px'; svg.style.display='block';
+
+  const lineY = 8;
+
+  const base = document.createElementNS(svg.namespaceURI,'line');
+  base.setAttribute('x1', PAD); base.setAttribute('x2', W-PAD);
+  base.setAttribute('y1', lineY); base.setAttribute('y2', lineY);
+  base.setAttribute('stroke','#B9B3A2'); base.setAttribute('stroke-width','1');
+  base.setAttribute('vector-effect','non-scaling-stroke');
+  svg.appendChild(base);
+
+  ticks.forEach(tick=>{
+    const tx = x(tick);
+    const tickLine = document.createElementNS(svg.namespaceURI,'line');
+    tickLine.setAttribute('x1', tx); tickLine.setAttribute('x2', tx);
+    tickLine.setAttribute('y1', tick===0 ? lineY-5 : lineY-3);
+    tickLine.setAttribute('y2', lineY+3);
+    tickLine.setAttribute('stroke', tick===0 ? '#8A8373' : '#B9B3A2');
+    tickLine.setAttribute('stroke-width', tick ===0 ? '1.5' : '1');
+    tickLine.setAttribute('vector-effect','non-scaling-stroke');
+    svg.appendChild(tickLine);
+  });
+
+  return svg;
+}
+
+function makeTickLabels(domain, ticks, unit){
+  const frag = document.createDocumentFragment();
+  ticks.forEach(tick=>{
+    const el = document.createElement('span');
+    el.className ='tick-label';
+    el.style.left = pctX(tick, domain) + '%';
+    el.textContent = (tick>0?'+':'') + tick + (unit==='\u00b0' ? '\u00b0' : '');
+    frag.appendChild(el);
+  });
+  return frag;
+}
+
+const UNIT_DOMAINS = computUnitDomains();
+
+buildTabs();
+render('Orbital Length');
+</script>
+</body>
+</html>
